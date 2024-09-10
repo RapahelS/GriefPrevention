@@ -338,10 +338,16 @@ public class BlockEventHandler implements Listener {
                 return;
             }
 
+            if (playerData.lastClaim != null
+                    && playerData.lastClaim.isNear(player.getLocation(), 15)) {
+                return;
+            }
+
             int radius = GriefPrevention.instance.config_claims_automaticClaimsForNewPlayersRadius;
 
             // if the player is in survival mode, automatically create a claim centered at
             // the chest
+
             if (player.getGameMode() == GameMode.SURVIVAL) {
                 // radius == 0 means protect ONLY the chest
                 if (GriefPrevention.instance.config_claims_automaticClaimsForNewPlayersRadius == 0) {
@@ -446,15 +452,21 @@ public class BlockEventHandler implements Listener {
                     int newz2 = Math.max(lastClaim.getGreaterBoundaryCorner().getBlockZ(), block.getZ());
 
                     // Automatically resize the claim to include the newly placed block
-                    this.dataStore.resizeClaimWithChecks(player, playerData, newx1, newx2,
+                    playerData.claimResizing = lastClaim;
+                    boolean success = this.dataStore.resizeClaimWithChecks(player, playerData, newx1, newx2,
                             lastClaim.getLesserBoundaryCorner().getBlockY(),
-                            lastClaim.getGreaterBoundaryCorner().getBlockY(), newz1, newz2);
+                            lastClaim.getGreaterBoundaryCorner().getBlockY(), newz1, newz2, true);
 
-                    GriefPrevention.sendMessage(player, TextMode.Success,
-                            "Your claim has been automatically expanded to include the new block.");
+                    // Clear the resizing claim after the process is complete
+                    playerData.claimResizing = null;
+                    if (success) {
+                        GriefPrevention.sendMessage(player, TextMode.Success,
+                                "Grundstück erweitert! +" + playerData.getRemainingClaimBlocks()
+                                        + " Blöcke verfügbar.");
 
-                    // Visualize the newly expanded claim for the player
-                    BoundaryVisualization.visualizeClaim(player, lastClaim, VisualizationType.CLAIM, block);
+                        // Visualize the newly expanded claim for the player
+                        BoundaryVisualization.visualizeClaim(player, lastClaim, VisualizationType.CLAIM, block);
+                    }
                 }
             }
         }
